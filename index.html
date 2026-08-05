@@ -967,6 +967,86 @@ table td, table th {
 <script>
 /* ========== パスワード設定（ここを変更） ========== */
 const APP_PASSWORD = "rpm-namuni";
+const LOCK_TIMEOUT_MS = 60 * 60 * 1000; // 1時間（ミリ秒）
+
+/* ========== パスワードロック処理 ========== */
+(function initLock() {
+  const lockScreen = document.getElementById("lockScreen");
+  const appShell = document.getElementById("appShell");
+  const passwordInput = document.getElementById("lockPassword");
+  const errorEl = document.getElementById("lockError");
+  const submitBtn = document.getElementById("lockSubmit");
+
+  let inactivityTimer = null;
+
+  // ページ読み込み時（更新含む）は必ずロック状態
+  lockApp();
+
+  function lockApp() {
+    // 計測中なら停止
+    if (typeof running !== "undefined" && running && typeof stopMic === "function") {
+      stopMic();
+    }
+
+    lockScreen.classList.remove("hidden");
+    appShell.classList.add("locked");
+    passwordInput.value = "";
+    errorEl.textContent = "";
+
+    // タイマー停止
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = null;
+    }
+
+    setTimeout(() => passwordInput.focus(), 80);
+  }
+
+  function unlockApp() {
+    lockScreen.classList.add("hidden");
+    appShell.classList.remove("locked");
+    startInactivityTimer();
+  }
+
+  function startInactivityTimer() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      lockApp();
+    }, LOCK_TIMEOUT_MS);
+  }
+
+  // ユーザー操作でタイマーをリセット
+  function resetInactivityTimer() {
+    // ロック中は無視
+    if (!lockScreen.classList.contains("hidden")) return;
+    startInactivityTimer();
+  }
+
+  const activityEvents = [
+    "mousedown", "mousemove", "touchstart", "touchmove",
+    "keydown", "scroll", "click", "wheel"
+  ];
+  activityEvents.forEach(evt => {
+    document.addEventListener(evt, resetInactivityTimer, { passive: true });
+  });
+
+  function tryUnlock() {
+    const input = passwordInput.value.trim();
+    if (input === APP_PASSWORD) {
+      errorEl.textContent = "";
+      unlockApp();
+    } else {
+      errorEl.textContent = "パスコードが違います";
+      passwordInput.value = "";
+      passwordInput.focus();
+    }
+  }
+
+  submitBtn.addEventListener("click", tryUnlock);
+  passwordInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") tryUnlock();
+  });
+})();
 
 const FFT_SIZE = 8192;
 const gearOptions = ["3.5:1", "3.7:1", "4.0:1", "4.2:1", "5.0:1", "6.4:1", "8.75:1", "11.2:1"];
