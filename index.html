@@ -432,9 +432,9 @@ border-bottom: 1px solid #eef2ff;
 text-align: center;
 white-space: nowrap;
 }
-.history-table th:nth-child(3), .history-table td:nth-child(3) { width: 50px; } /* モーター */
-.history-table th:nth-child(6), .history-table td:nth-child(6) { width: 40px; } /* 電圧 */
-.history-table th:nth-child(8), .history-table td:nth-child(8) { width: 40px; } /* タイヤ径 */
+.history-table th:nth-child(3), .history-table td:nth-child(3) { width: 50px; }
+.history-table th:nth-child(6), .history-table td:nth-child(6) { width: 40px; }
+.history-table th:nth-child(8), .history-table td:nth-child(8) { width: 40px; }
 .delete-btn {
 border: none;
 background: #ffeef2;
@@ -481,7 +481,6 @@ color: var(--text-sub);
 content: ' ▲';
 }
 
-/* お気に入り名前スタイル */
 .fav-name {
 cursor: pointer;
 transition: all 0.2s ease;
@@ -492,7 +491,6 @@ color: var(--accent-orange);
 font-weight: 800;
 }
 
-/* お気に入りフィルタボタン */
 .fav-filter-btn {
 border: none;
 border-radius: 999px;
@@ -511,7 +509,6 @@ background: linear-gradient(135deg, #f0a050, #e88a30);
 color: #ffffff;
 }
 
-/* 負荷バッジ */
 .load-badge {
 display: inline-block;
 background: #fff3e0;
@@ -523,7 +520,6 @@ border-radius: 4px;
 margin-left: 3px;
 }
 
-/* ダークモード時のスタイル */
 body.dark-mode {
 --bg: #12151c;
 --card-bg: #1a1e29;
@@ -601,12 +597,10 @@ background: #3d2e1a;
 color: #f0a050;
 }
 
-/* ========== 履歴フィルタのラベル強制表示 ========== */
 .filter-item label {
     display: block !important;
     visibility: visible !important;
 }
-/* ========== 比較表の中央揃え ========== */
 table td, table th {
     text-align: center !important;
 }
@@ -729,7 +723,6 @@ table td, table th {
 <canvas id="spectrum"></canvas>
 </div>
 
-<!-- ========== デュアルレンジスライダー ========== -->
 <div class="rpm-limit-section">
 <div class="rpm-limit-label" style="margin-bottom:4px;">
 <span>集音フィルタ (RPM範囲)</span>
@@ -852,20 +845,15 @@ table td, table th {
 <div class="setting-label"><span>走行負荷 (%)</span><span class="setting-value" id="loadFactorLabel">0%</span></div>
 <input type="range" id="loadFactorRange" min="-100" max="100" step="1" value="0" />
 </div>
-
-<!-- 負荷数値表示切替 -->
 <div class="setting-item" style="margin-top:6px;">
 <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; cursor:pointer;">
 <input type="checkbox" id="showLoadValues" checked style="width:18px; height:18px;" />
 <span>負荷適用値を並べて表示</span>
 </label>
 </div>
-
-<!-- ダークモード切替ボタン -->
 <div style="margin-top: 8px;">
 <button class="secondary-btn gray" id="darkModeToggleBtn" style="width: 100%; font-size: 0.8rem; border: 1px solid #c9d5ff;">ダークモード: OFF</button>
 </div>
-
 <div style="display:flex; gap:10px; margin-top:12px;">
 <button class="primary-btn blue" id="settingsResetBtn" style="flex:1; font-size:0.75rem;">設定リセット</button>
 <button class="secondary-btn gray" id="settingsCloseBtn" style="flex:1; font-size:0.75rem;">閉じる</button>
@@ -965,88 +953,9 @@ table td, table th {
 </div>
 
 <script>
-/* ========== パスワード設定（ここを変更） ========== */
+/* ========== パスワード設定 ========== */
 const APP_PASSWORD = "rpm-namuni";
-const LOCK_TIMEOUT_MS = 60 * 60 * 1000; // 1時間（ミリ秒）
-
-/* ========== パスワードロック処理 ========== */
-(function initLock() {
-  const lockScreen = document.getElementById("lockScreen");
-  const appShell = document.getElementById("appShell");
-  const passwordInput = document.getElementById("lockPassword");
-  const errorEl = document.getElementById("lockError");
-  const submitBtn = document.getElementById("lockSubmit");
-
-  let inactivityTimer = null;
-
-  // ページ読み込み時（更新含む）は必ずロック状態
-  lockApp();
-
-  function lockApp() {
-    // 計測中なら停止
-    if (typeof running !== "undefined" && running && typeof stopMic === "function") {
-      stopMic();
-    }
-
-    lockScreen.classList.remove("hidden");
-    appShell.classList.add("locked");
-    passwordInput.value = "";
-    errorEl.textContent = "";
-
-    // タイマー停止
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = null;
-    }
-
-    setTimeout(() => passwordInput.focus(), 80);
-  }
-
-  function unlockApp() {
-    lockScreen.classList.add("hidden");
-    appShell.classList.remove("locked");
-    startInactivityTimer();
-  }
-
-  function startInactivityTimer() {
-    if (inactivityTimer) clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(() => {
-      lockApp();
-    }, LOCK_TIMEOUT_MS);
-  }
-
-  // ユーザー操作でタイマーをリセット
-  function resetInactivityTimer() {
-    // ロック中は無視
-    if (!lockScreen.classList.contains("hidden")) return;
-    startInactivityTimer();
-  }
-
-  const activityEvents = [
-    "mousedown", "mousemove", "touchstart", "touchmove",
-    "keydown", "scroll", "click", "wheel"
-  ];
-  activityEvents.forEach(evt => {
-    document.addEventListener(evt, resetInactivityTimer, { passive: true });
-  });
-
-  function tryUnlock() {
-    const input = passwordInput.value.trim();
-    if (input === APP_PASSWORD) {
-      errorEl.textContent = "";
-      unlockApp();
-    } else {
-      errorEl.textContent = "パスコードが違います";
-      passwordInput.value = "";
-      passwordInput.focus();
-    }
-  }
-
-  submitBtn.addEventListener("click", tryUnlock);
-  passwordInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") tryUnlock();
-  });
-})();
+const LOCK_TIMEOUT_MS = 60 * 60 * 1000; // 1時間
 
 const FFT_SIZE = 8192;
 const gearOptions = ["3.5:1", "3.7:1", "4.0:1", "4.2:1", "5.0:1", "6.4:1", "8.75:1", "11.2:1"];
@@ -1082,7 +991,6 @@ const state = {
 history: JSON.parse(localStorage.getItem("rpmHistory") || "[]")
 };
 
-// お気に入りリスト（indexベース → IDベースに移行）
 let favorites = JSON.parse(localStorage.getItem("rpmFavorites") || "[]");
 
 const UI = {
@@ -1151,7 +1059,7 @@ gear: document.getElementById("filterGear"),
 tire: document.getElementById("filterTire")
 };
 
-/* ========== パスワードロック処理 ========== */
+/* ========== パスワードロック処理（1つだけ） ========== */
 (function initLock() {
   const lockScreen = document.getElementById("lockScreen");
   const appShell = document.getElementById("appShell");
@@ -1159,17 +1067,45 @@ tire: document.getElementById("filterTire")
   const errorEl = document.getElementById("lockError");
   const submitBtn = document.getElementById("lockSubmit");
 
-  // セッション中は解除状態を維持
-  if (sessionStorage.getItem("rpmUnlocked") === "1") {
-    unlockApp();
-    return;
+  let inactivityTimer = null;
+
+  function lockApp() {
+    try {
+      if (running && typeof stopMic === "function") {
+        stopMic();
+      }
+    } catch (e) { /* 初期化前は無視 */ }
+
+    lockScreen.classList.remove("hidden");
+    appShell.classList.add("locked");
+    passwordInput.value = "";
+    errorEl.textContent = "";
+
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = null;
+    }
+    setTimeout(() => passwordInput.focus(), 80);
   }
 
   function unlockApp() {
     lockScreen.classList.add("hidden");
     appShell.classList.remove("locked");
-    sessionStorage.setItem("rpmUnlocked", "1");
+    startInactivityTimer();
   }
+
+  function startInactivityTimer() {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(lockApp, LOCK_TIMEOUT_MS);
+  }
+
+  function resetInactivityTimer() {
+    if (!lockScreen.classList.contains("hidden")) return;
+    startInactivityTimer();
+  }
+
+  ["mousedown", "mousemove", "touchstart", "touchmove", "keydown", "scroll", "click", "wheel"]
+    .forEach(evt => document.addEventListener(evt, resetInactivityTimer, { passive: true }));
 
   function tryUnlock() {
     const input = passwordInput.value.trim();
@@ -1188,11 +1124,11 @@ tire: document.getElementById("filterTire")
     if (e.key === "Enter") tryUnlock();
   });
 
-  // 初期フォーカス
-  setTimeout(() => passwordInput.focus(), 100);
+  // ページ読み込み・更新時は必ずロック
+  lockApp();
 })();
 
-/* ========== デュアルレンジスライダー制御 ========== */
+/* ========== デュアルレンジスライダー ========== */
 function updateRangeFill() {
 const min = parseInt(UI.rpmMinLimit.value);
 const max = parseInt(UI.rpmMaxLimit.value);
@@ -1227,7 +1163,6 @@ UI.rpmMaxLimitValue.textContent = rpmMaxLimit;
 updateRangeFill();
 });
 
-// 初期描画
 updateRangeFill();
 
 function toggleConditions() {
@@ -1235,7 +1170,6 @@ UI.conditionsContent.classList.toggle("active");
 UI.conditionsCard.classList.toggle("active");
 }
 
-/* ========== お気に入りフィルタ ========== */
 UI.favFilterBtn.addEventListener("click", () => {
 favFilterOn = !favFilterOn;
 UI.favFilterBtn.classList.toggle("on", favFilterOn);
@@ -1244,7 +1178,7 @@ populateFilters();
 renderHistory();
 });
 
-/* ========== 集音構造 ========== */
+/* ========== 集音 ========== */
 async function startMic() {
 if (running) return;
 running = true;
@@ -1295,7 +1229,6 @@ function getPrecisePeakHz(data, fftSize, sampleRate) {
 const binToHz = sampleRate / fftSize;
 let maxVal = -Infinity, maxIdx = -1;
 
-// ★ 集音フィルタ: rpmMinLimit〜rpmMaxLimit の範囲のみピーク検出
 const minBin = Math.floor((rpmMinLimit / 60) / binToHz);
 const maxBin = Math.ceil((rpmMaxLimit / 60) / binToHz);
 
@@ -1318,19 +1251,12 @@ return (maxIdx + offset) * binToHz;
 function computeSpeedFromRpm(rpm) {
     const tire = parseFloat(UI.tireRange.value);
     const gearRatio = parseFloat(gearOptions[UI.gearRange.value].split(":")[0]);
-
-    // 負荷係数
     const loadPercent = parseFloat(UI.loadFactorRange.value);
     const loadFactor = 1 - (loadPercent / 100);
-
-    // 生の値（負荷なし、校正のみ）
     const rawRpm = rpm * parseFloat(UI.rpmCalRange.value);
     const rawSpeed = (rawRpm / gearRatio) * (tire * Math.PI * 60) / 1000000;
-
-    // 負荷適用後
     const adjustedRpm = rawRpm * loadFactor;
     const speed = rawSpeed * loadFactor;
-
     return { adjustedRpm, speed, rawRpm, rawSpeed };
 }
 
@@ -1347,7 +1273,6 @@ requestAnimationFrame(loopFFT);
 if (!analyser || !dataArray) return;
 analyser.getByteFrequencyData(dataArray);
 
-// スペクトラム描画
 const canvas = UI.spectrum;
 const ctx = canvas.getContext("2d");
 const dpr = window.devicePixelRatio || 1;
@@ -1373,7 +1298,6 @@ else ctx.lineTo(x, y);
 }
 ctx.stroke();
 
-// マイクレベル
 const bars = UI.audioIndicator.querySelectorAll(".audio-bar");
 let sum = 0;
 for (let i = 0; i < 80; i++) sum += dataArray[i];
@@ -1398,37 +1322,30 @@ currentSpeed = speed;
 currentRpmRaw = rawRpm;
 currentSpeedRaw = rawSpeed;
 
-// CURRENT の表示値を先に決める（負荷適用後で判定）
 const dispNow = limitDisplay(Math.round(currentRpm));
 const showLoad = UI.showLoadValues.checked;
 const loadPercent = parseFloat(UI.loadFactorRange.value);
 const hasLoad = loadPercent !== 0;
 
-// CURRENT に数字が出たときだけ MAX / MIN を更新
 if (dispNow !== "--") {
 const rpmNum = Number(dispNow);
 if (maxRpmVal === 0 || rpmNum > maxRpmVal) maxRpmVal = rpmNum;
 if (minRpmVal === Infinity || rpmNum < minRpmVal) minRpmVal = rpmNum;
 if (maxSpeedVal === 0 || speed > maxSpeedVal) maxSpeedVal = speed;
 if (minSpeedVal === Infinity || speed < minSpeedVal) minSpeedVal = speed;
-
-// 生の値のMAX/MIN
 if (maxRpmRaw === 0 || rawRpm > maxRpmRaw) maxRpmRaw = rawRpm;
 if (minRpmRaw === Infinity || rawRpm < minRpmRaw) minRpmRaw = rawRpm;
 if (maxSpeedRaw === 0 || rawSpeed > maxSpeedRaw) maxSpeedRaw = rawSpeed;
 if (minSpeedRaw === Infinity || rawSpeed < minSpeedRaw) minSpeedRaw = rawSpeed;
 }
 
-// 表示（負荷適用後 = メイン表示）
 UI.rpmNow.textContent = dispNow;
 UI.rpmMax.textContent = maxRpmVal > 0 ? Math.round(maxRpmVal) : "--";
 UI.rpmMin.textContent = minRpmVal !== Infinity ? Math.round(minRpmVal) : "--";
-
 UI.speedNow.textContent = dispNow === "--" ? "--" : speed.toFixed(2);
 UI.speedTop.textContent = maxSpeedVal > 0 ? maxSpeedVal.toFixed(2) : "--";
 UI.speedMin.textContent = minSpeedVal !== Infinity ? minSpeedVal.toFixed(2) : "--";
 
-// 生の値（サブ表示）— 負荷が0以外かつチェックONの場合のみ表示
 if (showLoad && hasLoad) {
 UI.rpmNowRaw.textContent = dispNow === "--" ? "" : "生: " + Math.round(rawRpm);
 UI.rpmMaxRaw.textContent = maxRpmRaw > 0 ? "生: " + Math.round(maxRpmRaw) : "";
@@ -1447,7 +1364,6 @@ UI.speedMinRaw.textContent = "";
 }
 }
 
-/* ========== 比較表（負荷適用値と生数値を並列表示） ========== */
 function buildComparisonTable(baseRpm) {
 const voltages = [2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5];
 const currentV = parseFloat(UI.voltageRange.value);
@@ -1463,8 +1379,6 @@ const rpmLoaded = rpmRaw * loadFactor;
 const tr = document.createElement("tr");
 if (Math.abs(v - currentV) < 0.05) tr.classList.add("highlight-row");
 
-// 負荷ありの場合: RPM列に負荷適用値、RPM(生)列に生値
-// 負荷なしの場合: RPM列に生値、RPM(生)列は「-」
 if (hasLoad) {
 tr.innerHTML = `<td>${v.toFixed(1)}</td><td>${Math.round(rpmLoaded)}</td><td style="color:var(--text-sub);font-size:0.68rem;">${Math.round(rpmRaw)}</td>`;
 } else {
@@ -1476,13 +1390,11 @@ const gearRatio = parseFloat(g.split(":")[0]);
 const speedLoaded = (rpmLoaded / gearRatio) * (tire * Math.PI * 60) / 1000000;
 const speedRaw = (rpmRaw / gearRatio) * (tire * Math.PI * 60) / 1000000;
 const td = document.createElement("td");
-
 if (hasLoad) {
 td.innerHTML = `${speedLoaded.toFixed(2)}<br><span style="color:var(--text-sub);font-size:0.6rem;">生:${speedRaw.toFixed(2)}</span>`;
 } else {
 td.textContent = speedRaw.toFixed(2);
 }
-
 if (idx == UI.gearRange.value) td.classList.add("highlight-col");
 tr.appendChild(td);
 });
@@ -1515,7 +1427,6 @@ UI.statusLine.textContent = running ? "MEASURING — 解析中" : "READY — 計
 }
 });
 
-/* リセット：表示だけ消す（計測は継続） */
 UI.resetBtn.addEventListener("click", () => {
 currentRpm = 0;
 currentRpmRaw = 0;
@@ -1553,12 +1464,10 @@ UI.statusLine.textContent = running ? "MEASURING — 解析中" : "READY — 計
 }
 });
 
-/* 履歴・設定・保存を開いても計測は継続 */
 UI.historyBtn.addEventListener("click", () => {
 populateFilters();
 renderHistory();
 UI.historyModal.style.display = "flex";
-// モーダルを先頭にスクロール
 const modal = UI.historyModal.querySelector('.modal');
 if (modal) modal.scrollTop = 0;
 });
@@ -1593,7 +1502,6 @@ document.getElementById("historyCloseBtn").addEventListener("click", () => UI.hi
 document.getElementById("saveClose").addEventListener("click", () => UI.saveModal.style.display = "none");
 document.getElementById("saveCancelBtn").addEventListener("click", () => UI.saveModal.style.display = "none");
 
-/* ダークモード初期化 */
 const isDark = localStorage.getItem("darkMode") === "true";
 if (isDark) {
 document.body.classList.add("dark-mode");
@@ -1621,7 +1529,6 @@ UI.rpmCalLabel.textContent = "1.00";
 UI.loadFactorLabel.textContent = "0%";
 });
 
-/* ========== 保存（負荷情報付き） ========== */
 document.getElementById("saveConfirmBtn").addEventListener("click", () => {
 const name = UI.saveNameInput.value.trim() || "No Name";
 const motor = UI.motorTypeSelect.value || "未選択";
@@ -1647,7 +1554,6 @@ localStorage.setItem("rpmHistory", JSON.stringify(state.history));
 UI.saveModal.style.display = "none";
 });
 
-/* ========== お気に入りトグル ========== */
 function toggleFavorite(id) {
 const idx = favorites.indexOf(id);
 if (idx === -1) {
@@ -1663,18 +1569,15 @@ function isFavorite(id) {
 return favorites.includes(id);
 }
 
-/* ========== フィルタ・履歴 ========== */
 function populateFilters() {
 const keys = ['date', 'name', 'motor', 'speed', 'rpm', 'voltage', 'gear', 'tire'];
-
-// お気に入りフィルタONの場合、プルダウンの選択肢もお気に入りのみ
 const sourceData = favFilterOn
 ? state.history.filter(h => h.id && isFavorite(h.id))
 : state.history;
 
 keys.forEach(key => {
 const select = filters[key];
-const currentVal = select.value; // 現在の選択値を保持
+const currentVal = select.value;
 const values = [...new Set(sourceData.map(h => h[key]))].filter(v => v !== undefined).sort();
 select.innerHTML = '<option value="">すべて</option>';
 values.forEach(v => {
@@ -1683,7 +1586,6 @@ opt.value = v;
 opt.textContent = v;
 select.appendChild(opt);
 });
-// 選択値を復元（選択肢に存在する場合のみ）
 if (currentVal && values.map(String).includes(String(currentVal))) {
 select.value = currentVal;
 }
@@ -1706,7 +1608,6 @@ let filtered = state.history.filter(h => {
 return Object.keys(fValues).every(k => !fValues[k] || String(h[k]) === fValues[k]);
 });
 
-// お気に入りフィルタ
 if (favFilterOn) {
 filtered = filtered.filter(h => h.id && isFavorite(h.id));
 }
@@ -1719,17 +1620,12 @@ filtered.forEach((h, i) => {
 const tr = document.createElement("tr");
 const isFav = h.id && isFavorite(h.id);
 const favClass = isFav ? "fav-name is-fav" : "fav-name";
-
-// 負荷バッジ
 const loadBadge = h.load ? `<span class="load-badge">${h.load}</span>` : "";
 
-// RPM表示（負荷ありの場合は生値も）
 let rpmDisplay = h.rpm;
 if (h.load && h.rpmRaw) {
 rpmDisplay = `${h.rpm} <span style="color:var(--text-sub);font-size:0.6rem;">(生:${h.rpmRaw})</span>`;
 }
-
-// 速度表示
 let speedDisplay = h.speed;
 if (h.load && h.speedRaw) {
 speedDisplay = `${h.speed} <span style="color:var(--text-sub);font-size:0.6rem;">(生:${h.speedRaw})</span>`;
@@ -1747,7 +1643,6 @@ tr.innerHTML = `
      <td>${h.date}</td>
      <td><button class="delete-btn" onclick="deleteHistory(${state.history.indexOf(h)})">削除</button></td>
 `;
-
 UI.historyList.appendChild(tr);
 });
 }
@@ -1756,7 +1651,6 @@ UI.historySearchBtn.addEventListener("click", () => {
 renderHistory();
 });
 
-// フィルタリセットボタン
 document.getElementById("historyResetBtn").addEventListener("click", () => {
 Object.values(filters).forEach(sel => sel.value = "");
 if (favFilterOn) {
@@ -1773,7 +1667,6 @@ window.toggleFavorite = toggleFavorite;
 window.deleteHistory = (i) => {
 if (confirm("この履歴を削除しますか？")) {
 const removed = state.history.splice(i, 1)[0];
-// お気に入りからも削除
 if (removed && removed.id) {
 const favIdx = favorites.indexOf(removed.id);
 if (favIdx !== -1) favorites.splice(favIdx, 1);
@@ -1791,12 +1684,10 @@ e.target.style.display = "none";
 }
 };
 
-/* ========== ピンチイン・アウト禁止 ========== */
 document.addEventListener('touchmove', function(e) {
     if (e.scale !== 1) e.preventDefault();
 }, { passive: false });
 
-/* ========== ダブルタップズーム禁止 ========== */
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function(e) {
     const now = Date.now();
@@ -1805,7 +1696,6 @@ document.addEventListener('touchend', function(e) {
     }
     lastTouchEnd = now;
 }, false);
-
 </script>
 </body>
 </html>
